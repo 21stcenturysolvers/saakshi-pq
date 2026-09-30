@@ -55,7 +55,162 @@
   </div>
 </section>
 
+<section id="architecture">
+  <h2>Architecture</h2>
+  <p>The diagram is a design; nothing shown is built yet. Details are in <a href="https://github.com/21stcenturysolvers/saakshi-pq/blob/main/ARCHITECTURE.md">ARCHITECTURE.md</a>.</p>
+  <div class="diagram" role="img" aria-label="System architecture diagram: sender, recipient device, immutable ledger, escrow and forensic investigation, inside an air-gapped network">
+<pre class="mermaid">
+flowchart LR
+  subgraph AG["AIR-GAPPED NETWORK: no cloud KMS, no public blockchain"]
+    subgraph S["1. SENDER / AUTHORITY"]
+      S1["Classified document"]
+      S2["Encrypt once&lt;br/&gt;AES-256-GCM"]
+      S3["HSM - PKCS#11&lt;br/&gt;document keys + per-session watermark key"]
+      S4["Envelope Service&lt;br/&gt;ML-KEM-1024 key per recipient"]
+    end
+    subgraph R["2. RECIPIENT DEVICE: Secure Enclave TEE"]
+      R1["Smart card / Secure element&lt;br/&gt;ML-DSA-87 + ML-KEM keys + session secret Ru"]
+      R2["Sign PREPARE record&lt;br/&gt;ML-DSA-87"]
+      R3["Unwrap key + Decrypt&lt;br/&gt;in protected memory"]
+      R4["Render page - PDFium"]
+      R5["Embed 3-layer watermark&lt;br/&gt;LOCATE + NOMINATE + CONFIRM"]
+      R6["Self-verify mark&lt;br/&gt;fail = no release"]
+      R7["Sign COMPLETE record"]
+      R8["Visually identical,&lt;br/&gt;forensically unique copy"]
+    end
+    subgraph L["3. IMMUTABLE LEDGER"]
+      L1["CometBFT BFT ledger&lt;br/&gt;4 validators, separate admins"]
+      L2["WORM vault&lt;br/&gt;checkpoints + escrow packages"]
+      L3["Index DB - PostgreSQL&lt;br/&gt;watermark ID to ledger record"]
+    end
+    subgraph E["4. ESCROW: anti-framing"]
+      E1["Split Ru 3-of-5&lt;br/&gt;Shamir secret sharing"]
+      E2["5 independent arbiters&lt;br/&gt;ML-KEM-encrypted shares"]
+    end
+    subgraph F["5. FORENSIC INVESTIGATION: enclave"]
+      F1["Leaked copy&lt;br/&gt;screenshot / photo / scan / crop"]
+      F2["Hash + open case on ledger"]
+      F3["Identify document&lt;br/&gt;OCR + PDQ hash"]
+      F4["Correct geometry&lt;br/&gt;perspective, rotation, scale"]
+      F5["LOCATE&lt;br/&gt;extract 64-bit watermark ID"]
+      F6["NOMINATE&lt;br/&gt;Tardos collusion scoring"]
+      F7["Ledger lookup&lt;br/&gt;= decryption event"]
+      F8["Warrant: 3 of 5 arbiters&lt;br/&gt;release Ru into enclave"]
+      F9["CONFIRM&lt;br/&gt;detect Ru-keyed mark"]
+      F10["Verify ML-DSA signatures&lt;br/&gt;+ ledger + checkpoint"]
+      F11["Decision&lt;br/&gt;ATTRIBUTED / LEAD / NO ATTRIBUTION"]
+      F12["Signed evidence package"]
+    end
+  end
+  S1 --&gt; S2
+  S2 --&gt;|one ciphertext for all| R3
+  S3 --&gt; S4
+  R1 --&gt; R2
+  R2 --&gt;|PREPARE| L1
+  L1 --&gt;|final: release key| S4
+  S4 --&gt;|ML-KEM envelope| R3
+  S3 -.-&gt;|session watermark key| R5
+  R3 --&gt; R4 --&gt; R5 --&gt; R6 --&gt; R7
+  R7 --&gt;|COMPLETE| L1
+  R7 --&gt; R8
+  R1 --&gt;|Ru| E1
+  E1 --&gt; E2
+  E1 -.-&gt;|escrow package| L2
+  L1 --&gt; L2
+  L1 --&gt; L3
+  R8 -.-&gt;|LEAK| F1
+  F1 --&gt; F2 --&gt; F3 --&gt; F4
+  F4 --&gt; F5
+  F4 --&gt; F6
+  F5 --&gt; F7
+  F6 --&gt; F7
+  L3 --&gt; F7
+  F7 --&gt; F8
+  E2 --&gt; F8
+  F8 --&gt; F9 --&gt; F10
+  L1 --&gt; F10
+  F10 --&gt; F11 --&gt; F12
+</pre>
+  </div>
+</section>
+
+<section id="stack">
+  <h2>Technology stack</h2>
+  <div class="table-wrap"><table>
+<thead><tr><th scope="col">Technology</th><th scope="col">Purpose</th></tr></thead>
+<tbody>
+<tr><td>ML-KEM-1024 + ML-DSA-87 (FIPS 203/204)</td><td>Post-quantum key exchange and recipient signatures</td></tr>
+<tr><td>AES-256-GCM + SHA-384</td><td>Encrypt once for all recipients; hash records and leaked files</td></tr>
+<tr><td>HSM (PKCS#11) + recipient smart card</td><td>Keys stay in hardware; fresh watermark key per session</td></tr>
+<tr><td>CometBFT ledger, 4 validators, offline</td><td>No single admin can alter or delete records (Hyperledger Fabric SmartBFT evaluated for production)</td></tr>
+<tr><td>WORM storage</td><td>Write-once vault for ledger checkpoints and escrow packages</td></tr>
+<tr><td>Shamir secret sharing (3-of-5)</td><td>Splits the recipient secret among 5 arbiters</td></tr>
+<tr><td>Python + OpenCV</td><td>Watermark embedding/extraction, geometry correction, error correction</td></tr>
+<tr><td>Tesseract OCR + PDQ hashing</td><td>Identifies which document a leaked photo came from</td></tr>
+<tr><td>Rust</td><td>Memory-safe security-critical services</td></tr>
+</tbody>
+</table></div>
+</section>
+
+<section id="claims">
+  <h2>Claims boundary</h2>
+  <div class="cards">
+    <div class="card"><h3>Can establish</h3><p>A leaked copy carries evidence of a specific decryption event, signed by a registered credential, recorded before the investigation began.</p></div>
+    <div class="card"><h3>Does not claim</h3>
+      <ul>
+        <li>That a person intended to leak.</li>
+        <li>That the watermark cannot be removed.</li>
+        <li>That retyped or verbally relayed content is traceable (no visual carrier exists).</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="progress">
+  <h2>Progress</h2>
+  <p>Nothing is implemented yet. Live tracking is on the <a href="https://github.com/21stcenturysolvers/saakshi-pq/milestones">repository Milestones page</a>.</p>
+  <div class="table-wrap"><table>
+<thead><tr><th scope="col">Area</th><th scope="col">Status</th></tr></thead>
+<tbody>
+<tr><td>System design (internal specification)</td><td>Complete</td></tr>
+<tr><td>Repository and project site</td><td>Live</td></tr>
+<tr><td>P0 Protocol freeze</td><td>Next</td></tr>
+<tr><td>P1 Reference path (crypto, ledger, release agent)</td><td>Planned</td></tr>
+<tr><td>P2 Watermark engine</td><td>Planned</td></tr>
+<tr><td>P3 Forensic pipeline and verifier</td><td>Planned</td></tr>
+<tr><td>Demo video</td><td>Coming soon</td></tr>
+</tbody>
+</table></div>
+</section>
+
+<section id="roadmap">
+  <h2>Roadmap</h2>
+  <p>The MVP is planned as 10 weeks. No calendar dates are set. Exit: first measured recovery curves.</p>
+  <div class="table-wrap"><table>
+<thead><tr><th scope="col">Weeks</th><th scope="col">Work</th></tr></thead>
+<tbody>
+<tr><td>1-2</td><td>Crypto records, envelopes, 4-node ledger</td></tr>
+<tr><td>2-4</td><td>Renderer and watermark layers; self-verification</td></tr>
+<tr><td>3-5</td><td>Release agent state machine, escrow, PREPARE/COMPLETE</td></tr>
+<tr><td>4-6</td><td>Digital attack harness (JPEG, scaling, crops, rotation, perspective)</td></tr>
+<tr><td>5-7</td><td>Document resolver, locate chain, decision engine, evidence package, verifier</td></tr>
+<tr><td>6-8</td><td>Arbiter tool, warrant flow, framing test</td></tr>
+<tr><td>7-9</td><td>Collusion layer and Tardos scorer</td></tr>
+<tr><td>8-10</td><td>Camera pilot (phones x displays x distances x angles)</td></tr>
+</tbody>
+</table></div>
+</section>
+
   </div>
 </main>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+  mermaid.initialize({
+    startOnLoad: true,
+    securityLevel: "strict",
+    theme: window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "default",
+    flowchart: { useMaxWidth: false }
+  });
+</script>
 </body>
 </html>
