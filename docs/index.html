@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SAAKSHI</title>
+<meta name="description" content="Post-quantum decryption provenance and leak attribution for multi-recipient classified documents (PS 26237).">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="hero">
+  <div class="wrap">
+    <h1>SAAKSHI</h1>
+    <p class="tagline">Every decrypted copy carries its own witness.</p>
+    <p class="ps-line">Problem statement PS 26237, Indian Navy WESEE, Ministry of Defence. Smart India Hackathon.</p>
+    <div class="actions">
+      <a class="btn" href="https://github.com/21stcenturysolvers/saakshi-pq">View on GitHub</a>
+      <a class="btn btn-secondary" href="https://github.com/21stcenturysolvers/saakshi-pq/blob/main/ARCHITECTURE.md">Architecture</a>
+      <a id="demo-video" class="btn btn-disabled" aria-disabled="true" tabindex="-1" href="#">Demo video: coming soon</a>
+    </div>
+  </div>
+</header>
+<main>
+  <div class="wrap">
+
+<section id="problem">
+  <h2>Problem</h2>
+  <p>A classified document shared with many recipients decrypts to identical copies. When one copy leaks, every recipient becomes an equal suspect. Access logs can be altered by a privileged admin, and identical watermarks identify no one.</p>
+</section>
+
+<section id="approach">
+  <h2>Approach</h2>
+  <p>SAAKSHI is an offline, post-quantum system that watermarks every copy at the moment of decryption and commits a signed decryption record to a tamper-evident ledger. Its three-layer watermark lets a leaked copy be traced back to its decryption event.</p>
+  <ol class="steps">
+    <li><strong>Sign before decrypt.</strong> The recipient signs a decryption record (ML-DSA-87); it is committed to an offline BFT ledger before any key is released. No record, no plaintext.</li>
+    <li><strong>Watermark at decryption.</strong> The page is marked while it renders, so a clean copy never exists. Copies look identical but are forensically distinct.</li>
+    <li><strong>Trace from the leak.</strong> Extract the watermark, look it up on the ledger, verify signature and ledger proof, and output a signed evidence package naming the decryption event.</li>
+    <li><strong>Fully air-gapped.</strong> NIST FIPS 203/204 post-quantum cryptography, on-premise HSM, no cloud KMS, no public blockchain.</li>
+  </ol>
+  <div class="cards">
+    <div class="card"><h3>Framing-resistant evidence</h3><p>The final proof depends on a recipient secret split among 5 independent arbiters (3 needed); no single admin can forge evidence against anyone.</p></div>
+    <div class="card"><h3>Built for real leaks</h3><p>Screenshots, phone photos of a full page, print-and-scan, crops and recompression. A keyed sync pattern corrects perspective, rotation and scale; an error-corrected ID is carried on every page; evidence is combined across pages and photos.</p></div>
+    <div class="card"><h3>Refuses to guess</h3><p>A decryption event is named only when every check passes; otherwise the result is LEAD or NO ATTRIBUTION.</p></div>
+  </div>
+</section>
+
+<section id="watermark">
+  <h2>Three-layer watermark</h2>
+  <div class="cards">
+    <div class="card"><h3>LOCATE</h3><p>Finds the decryption event by extracting a 64-bit watermark ID.</p></div>
+    <div class="card"><h3>NOMINATE</h3><p>Resists colluding recipients (Tardos code).</p></div>
+    <div class="card"><h3>CONFIRM</h3><p>Unforgeable proof, opened only under warrant.</p></div>
+  </div>
+</section>
+
+  </div>
+</main>
+</body>
+</html>

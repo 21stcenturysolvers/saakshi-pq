@@ -235,6 +235,7 @@ Nothing is implemented yet. The table reflects the current state of the project.
 README.md
 ARCHITECTURE.md
 ROADMAP.md
+docs/             GitHub Pages source
 ```
 
 ## References
