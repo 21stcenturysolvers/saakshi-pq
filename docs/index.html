@@ -5,32 +5,51 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SAAKSHI</title>
 <meta name="description" content="Post-quantum decryption provenance and leak attribution for multi-recipient classified documents (PS 26237).">
-<meta name="color-scheme" content="light dark">
+<meta name="color-scheme" content="light">
+<meta name="theme-color" content="#ffffff">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<header class="hero">
+<header class="topbar">
+  <nav class="wrap nav" aria-label="Primary">
+    <a class="brand" href="#home">SAAKSHI</a>
+    <ul class="nav-links">
+      <li><a href="#home">Home</a></li>
+      <li><a href="#problem">Problem</a></li>
+      <li><a href="#approach">Approach</a></li>
+      <li><a href="#architecture">Architecture</a></li>
+      <li><a href="#stack">Stack</a></li>
+      <li><a href="#progress">Progress</a></li>
+      <li><a href="#video">Video</a></li>
+      <li><a href="#references">Research</a></li>
+    </ul>
+  </nav>
+</header>
+<main>
+<section id="home" class="hero">
   <div class="wrap">
+    <p class="eyebrow">PS 26237 &middot; Indian Navy WESEE, Ministry of Defence</p>
     <h1>SAAKSHI</h1>
     <p class="tagline">Every decrypted copy carries its own witness.</p>
-    <p class="ps-line">Problem statement PS 26237, Indian Navy WESEE, Ministry of Defence. Smart India Hackathon.</p>
+    <p class="lede">Post-quantum decryption provenance and leak attribution for multi-recipient classified documents. Smart India Hackathon.</p>
     <div class="actions">
-      <a class="btn" href="https://github.com/21stcenturysolvers/saakshi-pq">View on GitHub</a>
+      <a class="btn btn-primary" href="https://github.com/21stcenturysolvers/saakshi-pq">View on GitHub</a>
       <a class="btn btn-secondary" href="https://github.com/21stcenturysolvers/saakshi-pq/blob/main/ARCHITECTURE.md">Architecture</a>
       <a id="demo-video" class="btn btn-disabled" aria-disabled="true" tabindex="-1" href="#">Demo video: coming soon</a>
     </div>
   </div>
-</header>
-<main>
-  <div class="wrap">
-
-<section id="problem">
-  <h2>Problem</h2>
-  <p>A classified document shared with many recipients decrypts to identical copies. When one copy leaks, every recipient becomes an equal suspect. Access logs can be altered by a privileged admin, and identical watermarks identify no one.</p>
 </section>
 
-<section id="approach">
+<section id="problem" class="sec">
+  <div class="wrap">
+  <h2>Problem</h2>
+  <p>A classified document shared with many recipients decrypts to identical copies. When one copy leaks, every recipient becomes an equal suspect. Access logs can be altered by a privileged admin, and identical watermarks identify no one.</p>
+  </div>
+</section>
+
+<section id="approach" class="sec alt">
+  <div class="wrap">
   <h2>Approach</h2>
   <p>SAAKSHI is an offline, post-quantum system that watermarks every copy at the moment of decryption and commits a signed decryption record to a tamper-evident ledger. Its three-layer watermark lets a leaked copy be traced back to its decryption event.</p>
   <ol class="steps">
@@ -44,18 +63,22 @@
     <div class="card"><h3>Built for real leaks</h3><p>Screenshots, phone photos of a full page, print-and-scan, crops and recompression. A keyed sync pattern corrects perspective, rotation and scale; an error-corrected ID is carried on every page; evidence is combined across pages and photos.</p></div>
     <div class="card"><h3>Refuses to guess</h3><p>A decryption event is named only when every check passes; otherwise the result is LEAD or NO ATTRIBUTION.</p></div>
   </div>
+  </div>
 </section>
 
-<section id="watermark">
+<section id="watermark" class="sec">
+  <div class="wrap">
   <h2>Three-layer watermark</h2>
   <div class="cards">
     <div class="card"><h3>LOCATE</h3><p>Finds the decryption event by extracting a 64-bit watermark ID.</p></div>
     <div class="card"><h3>NOMINATE</h3><p>Resists colluding recipients (Tardos code).</p></div>
     <div class="card"><h3>CONFIRM</h3><p>Unforgeable proof, opened only under warrant.</p></div>
   </div>
+  </div>
 </section>
 
-<section id="architecture">
+<section id="architecture" class="sec alt">
+  <div class="wrap">
   <h2>Architecture</h2>
   <p>The diagram is a design; nothing shown is built yet. Details are in <a href="https://github.com/21stcenturysolvers/saakshi-pq/blob/main/ARCHITECTURE.md">ARCHITECTURE.md</a>.</p>
   <div class="diagram" role="img" aria-label="System architecture diagram: sender, recipient device, immutable ledger, escrow and forensic investigation, inside an air-gapped network">
@@ -132,9 +155,11 @@ flowchart LR
   F10 --&gt; F11 --&gt; F12
 </pre>
   </div>
+  </div>
 </section>
 
-<section id="stack">
+<section id="stack" class="sec">
+  <div class="wrap">
   <h2>Technology stack</h2>
   <div class="table-wrap"><table>
 <thead><tr><th scope="col">Technology</th><th scope="col">Purpose</th></tr></thead>
@@ -150,9 +175,11 @@ flowchart LR
 <tr><td>Rust</td><td>Memory-safe security-critical services</td></tr>
 </tbody>
 </table></div>
+  </div>
 </section>
 
-<section id="claims">
+<section id="claims" class="sec alt">
+  <div class="wrap">
   <h2>Claims boundary</h2>
   <div class="cards">
     <div class="card"><h3>Can establish</h3><p>A leaked copy carries evidence of a specific decryption event, signed by a registered credential, recorded before the investigation began.</p></div>
@@ -164,9 +191,11 @@ flowchart LR
       </ul>
     </div>
   </div>
+  </div>
 </section>
 
-<section id="progress">
+<section id="progress" class="sec">
+  <div class="wrap">
   <h2>Progress</h2>
   <p>Nothing is implemented yet. Live tracking is on the <a href="https://github.com/21stcenturysolvers/saakshi-pq/milestones">repository Milestones page</a>.</p>
   <div class="table-wrap"><table>
@@ -181,9 +210,11 @@ flowchart LR
 <tr><td>Demo video</td><td>Coming soon</td></tr>
 </tbody>
 </table></div>
+  </div>
 </section>
 
-<section id="roadmap">
+<section id="roadmap" class="sec alt">
+  <div class="wrap">
   <h2>Roadmap</h2>
   <p>The MVP is planned as 10 weeks. No calendar dates are set. Exit: first measured recovery curves.</p>
   <div class="table-wrap"><table>
@@ -199,9 +230,19 @@ flowchart LR
 <tr><td>8-10</td><td>Camera pilot (phones x displays x distances x angles)</td></tr>
 </tbody>
 </table></div>
+  </div>
 </section>
 
-<section id="references">
+<section id="video" class="sec">
+  <div class="wrap">
+  <h2>Demo video</h2>
+  <p>A walkthrough of the decryption and attribution flow will be published here.</p>
+  <div class="video-frame" role="img" aria-label="Demo video placeholder"><span>Coming soon</span></div>
+  </div>
+</section>
+
+<section id="references" class="sec alt">
+  <div class="wrap">
   <h2>References</h2>
   <div class="table-wrap"><table>
 <thead><tr><th scope="col">Reference</th><th scope="col">Source</th><th scope="col">Year</th><th scope="col">Note</th></tr></thead>
@@ -217,9 +258,8 @@ flowchart LR
 <tr><td><a href="https://cxotoday.com/cybersecurity/cost-of-org-level-data-breach-touches-its-highest-level-in-india-at-rs-25-5-crore-ibm/">Cost of org-level data breach in India</a></td><td>CXOToday, reporting IBM</td><td>2026</td><td>An average data breach in India costs Rs 25.5 crore.</td></tr>
 </tbody>
 </table></div>
-</section>
-
   </div>
+</section>
 </main>
 <footer class="site-footer">
   <div class="wrap">
@@ -232,9 +272,34 @@ flowchart LR
   mermaid.initialize({
     startOnLoad: true,
     securityLevel: "strict",
-    theme: window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "default",
+    theme: "base",
+    themeVariables: {
+      fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+      primaryColor: "#ffffff",
+      primaryBorderColor: "#b8b8bd",
+      primaryTextColor: "#1d1d1f",
+      lineColor: "#6e6e73",
+      clusterBkg: "#fafafa",
+      clusterBorder: "#d2d2d7",
+      edgeLabelBackground: "#ffffff"
+    },
     flowchart: { useMaxWidth: false }
   });
+
+  (function () {
+    var links = document.querySelectorAll(".nav-links a");
+    var map = {};
+    links.forEach(function (a) { map[a.getAttribute("href").slice(1)] = a; });
+    if (!("IntersectionObserver" in window)) return;
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (!e.isIntersecting || !map[e.target.id]) return;
+        links.forEach(function (a) { a.removeAttribute("aria-current"); });
+        map[e.target.id].setAttribute("aria-current", "true");
+      });
+    }, { rootMargin: "-40% 0px -55% 0px" });
+    document.querySelectorAll("main > section").forEach(function (s) { io.observe(s); });
+  })();
 </script>
 </body>
 </html>
