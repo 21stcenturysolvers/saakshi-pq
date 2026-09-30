@@ -234,6 +234,7 @@ Nothing is implemented yet. The table reflects the current state of the project.
 .gitignore
 README.md
 ARCHITECTURE.md
+ROADMAP.md
 ```
 
 ## References
