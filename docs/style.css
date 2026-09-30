@@ -121,3 +121,10 @@ th, td {
   border-bottom: 1px solid var(--border);
 }
 th { color: var(--primary); background: var(--surface); }
+
+.site-footer {
+  padding: 24px 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+.site-footer p { margin: 0 0 4px; }
