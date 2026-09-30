@@ -123,6 +123,83 @@ Does not claim:
 - That the watermark cannot be removed.
 - That retyped or verbally relayed content is traceable (no visual carrier exists).
 
+## Architecture
+
+See [ARCHITECTURE.md](ARCHITECTURE.md) for the zones, release flow, investigation flow and trust boundaries.
+
+```mermaid
+flowchart LR
+  subgraph AG["AIR-GAPPED NETWORK: no cloud KMS, no public blockchain"]
+    subgraph S["1. SENDER / AUTHORITY"]
+      S1["Classified document"]
+      S2["Encrypt once<br/>AES-256-GCM"]
+      S3["HSM - PKCS#11<br/>document keys + per-session watermark key"]
+      S4["Envelope Service<br/>ML-KEM-1024 key per recipient"]
+    end
+    subgraph R["2. RECIPIENT DEVICE: Secure Enclave TEE"]
+      R1["Smart card / Secure element<br/>ML-DSA-87 + ML-KEM keys + session secret Ru"]
+      R2["Sign PREPARE record<br/>ML-DSA-87"]
+      R3["Unwrap key + Decrypt<br/>in protected memory"]
+      R4["Render page - PDFium"]
+      R5["Embed 3-layer watermark<br/>LOCATE + NOMINATE + CONFIRM"]
+      R6["Self-verify mark<br/>fail = no release"]
+      R7["Sign COMPLETE record"]
+      R8["Visually identical,<br/>forensically unique copy"]
+    end
+    subgraph L["3. IMMUTABLE LEDGER"]
+      L1["CometBFT BFT ledger<br/>4 validators, separate admins"]
+      L2["WORM vault<br/>checkpoints + escrow packages"]
+      L3["Index DB - PostgreSQL<br/>watermark ID to ledger record"]
+    end
+    subgraph E["4. ESCROW: anti-framing"]
+      E1["Split Ru 3-of-5<br/>Shamir secret sharing"]
+      E2["5 independent arbiters<br/>ML-KEM-encrypted shares"]
+    end
+    subgraph F["5. FORENSIC INVESTIGATION: enclave"]
+      F1["Leaked copy<br/>screenshot / photo / scan / crop"]
+      F2["Hash + open case on ledger"]
+      F3["Identify document<br/>OCR + PDQ hash"]
+      F4["Correct geometry<br/>perspective, rotation, scale"]
+      F5["LOCATE<br/>extract 64-bit watermark ID"]
+      F6["NOMINATE<br/>Tardos collusion scoring"]
+      F7["Ledger lookup<br/>= decryption event"]
+      F8["Warrant: 3 of 5 arbiters<br/>release Ru into enclave"]
+      F9["CONFIRM<br/>detect Ru-keyed mark"]
+      F10["Verify ML-DSA signatures<br/>+ ledger + checkpoint"]
+      F11["Decision<br/>ATTRIBUTED / LEAD / NO ATTRIBUTION"]
+      F12["Signed evidence package"]
+    end
+  end
+  S1 --> S2
+  S2 -->|one ciphertext for all| R3
+  S3 --> S4
+  R1 --> R2
+  R2 -->|PREPARE| L1
+  L1 -->|final: release key| S4
+  S4 -->|ML-KEM envelope| R3
+  S3 -.->|session watermark key| R5
+  R3 --> R4 --> R5 --> R6 --> R7
+  R7 -->|COMPLETE| L1
+  R7 --> R8
+  R1 -->|Ru| E1
+  E1 --> E2
+  E1 -.->|escrow package| L2
+  L1 --> L2
+  L1 --> L3
+  R8 -.->|LEAK| F1
+  F1 --> F2 --> F3 --> F4
+  F4 --> F5
+  F4 --> F6
+  F5 --> F7
+  F6 --> F7
+  L3 --> F7
+  F7 --> F8
+  E2 --> F8
+  F8 --> F9 --> F10
+  L1 --> F10
+  F10 --> F11 --> F12
+```
+
 ## Technology stack
 
 | Technology | Purpose |

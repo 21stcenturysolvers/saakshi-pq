@@ -1,6 +1,6 @@
 # Architecture
 
-This document describes the SAAKSHI design. Nothing described here is implemented yet; see [ROADMAP.md](ROADMAP.md) for the planned build order.
+SAAKSHI runs entirely inside an air-gapped network. The design is complete; nothing shown here is implemented yet.
 
 ```mermaid
 flowchart LR
@@ -77,61 +77,51 @@ flowchart LR
 
 ## Zones
 
-### 1. Sender / Authority
+**1. Sender / authority.** The classified document is encrypted once with AES-256-GCM, so every recipient receives the same ciphertext. Document keys and a fresh per-session watermark key are held in an HSM (PKCS#11). The Envelope Service wraps the document key for each recipient with ML-KEM-1024, and releases it only after the ledger has finalised the recipient's signed record.
 
-The document is encrypted once with AES-256-GCM, so one ciphertext serves every recipient. Document keys and a fresh per-session watermark key are held in an HSM (PKCS#11). An envelope service wraps the document key for each recipient with ML-KEM-1024, and releases it only after the ledger confirms the recipient's signed PREPARE record.
+**2. Recipient device.** Keys live on a smart card or secure element and are non-exportable. Inside a secure enclave the device signs a PREPARE record, unwraps the key, decrypts in protected memory and renders the page. The three-layer watermark is embedded during rendering and self-verified; if verification fails, nothing is released. The device then signs a COMPLETE record. The resulting copy is visually identical to others but forensically unique.
 
-### 2. Recipient device (secure enclave)
+**3. Immutable ledger.** A CometBFT ledger with 4 validators under separate administrators stores signed records. A write-once (WORM) vault holds ledger checkpoints and escrow packages, and a PostgreSQL index maps each watermark ID to its ledger record. The ledger stores hashes and signatures only.
 
-The recipient's smart card or secure element holds the ML-DSA-87 and ML-KEM keys and a session secret, Ru. The device signs a PREPARE record, unwraps the key and decrypts in protected memory, renders the page, and embeds the three-layer watermark. It then self-verifies the mark (failure means no release) and signs a COMPLETE record. The result looks identical to other copies but is forensically unique.
+**4. Escrow (anti-framing).** The recipient's session secret (Ru) is split 3-of-5 with Shamir secret sharing among 5 independent arbiters, each share encrypted with ML-KEM. No single administrator can reconstruct Ru, so no single administrator can forge the final proof against a recipient.
 
-### 3. Immutable ledger
-
-A CometBFT ledger with 4 validators under separate administrators stores PREPARE and COMPLETE records. A write-once (WORM) vault holds ledger checkpoints and escrow packages. An index database maps a watermark ID to its ledger record.
-
-### 4. Escrow (anti-framing)
-
-Ru is split 3-of-5 with Shamir secret sharing. Each share is encrypted with ML-KEM to one of 5 independent arbiters. The escrow package is stored in the WORM vault. No single party, including an administrator, can reconstruct Ru.
-
-### 5. Forensic investigation (enclave)
-
-Investigators work inside an enclave on a leaked screenshot, photo, scan or crop. The pipeline identifies the document, corrects geometry, extracts the watermark, looks up the decryption event, and, under warrant, obtains Ru from 3 of 5 arbiters to check the CONFIRM layer. It verifies signatures, ledger inclusion and checkpoint, and outputs a decision and a signed evidence package.
+**5. Forensic investigation.** Inside an enclave, a leaked copy is hashed, the source document is identified, geometry is corrected, and the watermark is extracted and matched to a ledger record. The result is a signed evidence package with a decision of ATTRIBUTED, LEAD or NO ATTRIBUTION.
 
 ## Release flow
 
-Mapped to the PS 26237 end-to-end workflow:
+The ten steps map one-to-one to the PS 26237 end-to-end workflow.
 
-1. **Encrypt and distribute.** The authority encrypts the document once and distributes the single ciphertext.
-2. **Decrypt request.** The recipient's device requests the key and signs a PREPARE record with ML-DSA-87.
-3. **Commit to ledger.** The PREPARE record is committed to the BFT ledger; once final, the envelope service releases the ML-KEM-wrapped key. No record, no plaintext.
-4. **Decrypt.** The device unwraps the key and decrypts in protected memory.
-5. **Watermark.** The page is rendered and the three-layer watermark is embedded using the per-session key; the device self-verifies the mark.
-6. **Sign.** The device signs a COMPLETE record.
-7. **Commit COMPLETE.** The COMPLETE record is committed to the ledger and indexed by watermark ID; Ru is escrowed 3-of-5.
-8. **Copy delivered.** The recipient views a visually identical, forensically unique copy.
-9. **Leak, extract and match.** When a copy leaks, the watermark ID is extracted and matched on the ledger to a decryption event.
-10. **Verify and evidence record.** Signatures, ledger proof and checkpoint are verified, and a signed evidence package is produced.
+1. **Encrypt and distribute.** The authority encrypts the document once and distributes one ciphertext to all recipients.
+2. **Decrypt.** The recipient requests access; the device signs a PREPARE record with ML-DSA-87. Once the ledger has finalised it, the Envelope Service releases the ML-KEM envelope and the enclave unwraps the key and decrypts in protected memory.
+3. **Watermark.** The page is rendered and the three-layer watermark (LOCATE, NOMINATE, CONFIRM) is embedded using the per-session watermark key.
+4. **Sign.** The enclave self-verifies the mark (on failure nothing is released) and signs a COMPLETE record.
+5. **Commit to ledger.** The COMPLETE record is committed to the BFT ledger, and the recipient's escrow package is stored in the WORM vault.
+6. **Copy delivered.** The recipient views a visually identical, forensically unique copy.
+7. **Extract.** After a leak, the watermark ID is extracted from the leaked copy.
+8. **Match on ledger.** The watermark ID is looked up on the ledger to find the decryption event.
+9. **Verify.** ML-DSA signatures, ledger proof and checkpoint are verified.
+10. **Evidence record.** A signed evidence package is produced.
 
 ## Investigation flow
 
-1. Hash the leaked file and open a case on the ledger.
-2. Identify the source document (OCR and PDQ hash).
+1. Hash the leaked copy and open a case on the ledger.
+2. Identify the source document (OCR and PDQ hashing).
 3. Correct perspective, rotation and scale using the keyed sync pattern.
-4. LOCATE: extract the 64-bit watermark ID. NOMINATE: score collusion candidates (Tardos code).
-5. Look up the watermark ID on the ledger to find the decryption event.
-6. Under warrant, 3 of 5 arbiters release Ru into the enclave.
+4. LOCATE: extract the 64-bit watermark ID and look it up on the ledger to find the decryption event.
+5. NOMINATE: score candidates with a Tardos code when colluding recipients are suspected.
+6. Under a warrant, 3 of 5 arbiters release Ru into the enclave.
 7. CONFIRM: detect the Ru-keyed mark.
-8. Verify ML-DSA signatures, ledger records and checkpoint.
-9. Decide: ATTRIBUTED, LEAD or NO ATTRIBUTION. A decryption event is named only when every check passes.
-10. Produce the signed evidence package.
+8. Verify ML-DSA signatures, ledger inclusion and checkpoint.
+9. Decide: ATTRIBUTED only if every check passes; otherwise LEAD or NO ATTRIBUTION.
+10. Emit a signed evidence package.
 
 ## Trust boundaries
 
 - Plaintext exists only inside the recipient enclave.
-- Recipient keys are non-exportable.
+- Recipient keys are non-exportable and stay in hardware.
 - The ledger stores hashes and signatures only, never documents or keys.
-- No single administrator can alter ledger records or forge evidence against a recipient.
+- Ru is never held by a single party; recovering it requires 3 of 5 arbiters and a warrant.
 
-## Air-gap
+## Air-gap statement
 
-The whole system runs on an isolated network. It uses no cloud key-management service and no public blockchain.
+The whole system runs on an isolated network. It uses no cloud KMS, no public blockchain and no external services. Cryptography follows NIST FIPS 203 and FIPS 204, with keys held in on-premise HSMs and recipient hardware.
