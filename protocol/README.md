@@ -21,7 +21,7 @@ Out of scope for this public repository: key-derivation details, parameter and c
 | Document | Purpose | Status |
 | --- | --- | --- |
 | README.md | Scope, exit criteria, change control | This file |
-| records.md | PREPARE and COMPLETE records and their lifecycle | Planned |
+| [records.md](records.md) | PREPARE and COMPLETE records and their lifecycle | Draft |
 | release-flow.md | Release agent states and transitions | Planned |
 | interfaces.md | Roles and component interfaces | Planned |
 | decision-log.md | Recorded decisions and their reasons | Planned |
