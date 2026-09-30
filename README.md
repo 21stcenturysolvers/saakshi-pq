@@ -158,6 +158,7 @@ Nothing is implemented yet. The table reflects the current state of the project.
 README.md
 ARCHITECTURE.md
 ROADMAP.md
+protocol/         P0 protocol freeze documents
 docs/             GitHub Pages source
 ```
 
